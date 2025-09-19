@@ -1,0 +1,180 @@
+
+//UsuarioDAO
+
+import DAO.ConexaoDAO;
+import java.awt.Color;
+import DTO.UsuarioDTO;
+import View.TelaUsuario;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+
+public class UsuarioDAO {
+
+    Connection conexao = null;
+    PreparedStatement pst = null;
+    ResultSet rs = null;
+
+ 
+    public void inserirUsuario(UsuarioDTO objUsuarioDTO) {
+        String sql = "INSERT INTO tb_usuarios (id_usuario, usuario, login, senha, perfil) VALUES (?, ?, ?, ?, ?)";
+        conexao = new ConexaoDAO().conector();
+
+        try {
+            pst = conexao.prepareStatement(sql);
+            pst.setInt(1, objUsuarioDTO.getId_usuario());
+            pst.setString(2, objUsuarioDTO.getNome_usuario());
+            pst.setString(3, objUsuarioDTO.getLogin_usuario());
+            pst.setString(4, objUsuarioDTO.getSenha_usuario());
+            pst.setString(5, objUsuarioDTO.getPerfil_usuario());
+
+            int add = pst.executeUpdate();
+            if (add > 0) {
+                JOptionPane.showMessageDialog(null, "Usuário inserido com sucesso!");
+                pesquisaAuto();
+                limparCampos();
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Erro no método inserirUsuario: " + e);
+        } finally {
+            try { if(conexao != null) conexao.close(); } catch (SQLException e) {}
+        }
+    }
+
+   
+    public String autenticarUsuario(UsuarioDTO objUsuarioDTO) {
+        String perfil = null;
+        String sql = "SELECT * FROM tb_usuarios WHERE login = ? AND senha = ?";
+        conexao = new ConexaoDAO().conector();
+
+        try {
+            pst = conexao.prepareStatement(sql);
+            pst.setString(1, objUsuarioDTO.getLogin_usuario());
+            pst.setString(2, objUsuarioDTO.getSenha_usuario());
+            rs = pst.executeQuery();
+
+            if (rs.next()) {
+                perfil = rs.getString("perfil"); 
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Erro ao autenticar: " + e);
+        } finally {
+            try { if(conexao != null) conexao.close(); } catch (SQLException e) {}
+        }
+
+        return perfil; 
+    }
+
+    public void pesquisar(UsuarioDTO objUsuarioDTO) {
+        String sql = "SELECT * FROM tb_usuarios WHERE id_usuario = ?";
+        conexao = new ConexaoDAO().conector();
+
+        try {
+            pst = conexao.prepareStatement(sql);
+            pst.setInt(1, objUsuarioDTO.getId_usuario());
+            rs = pst.executeQuery();
+
+            if (rs.next()) {
+                TelaUsuario.txtNomeUsu.setText(rs.getString("usuario"));
+                TelaUsuario.txtLoginUsu.setText(rs.getString("login"));
+                TelaUsuario.txtSenhaUsu.setText(rs.getString("senha"));
+                TelaUsuario.cboPerfilUsu.setSelectedItem(rs.getString("perfil"));
+            } else {
+                JOptionPane.showMessageDialog(null, "Usuário não cadastrado!");
+                limparCampos();
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Erro no método pesquisar: " + e);
+        } finally {
+            try { if(conexao != null) conexao.close(); } catch (SQLException e) {}
+        }
+    }
+
+    
+    public void pesquisaAuto() {
+        String sql = "SELECT * FROM tb_usuarios";
+        conexao = new ConexaoDAO().conector();
+
+        try {
+            pst = conexao.prepareStatement(sql);
+            rs = pst.executeQuery();
+
+            DefaultTableModel model = (DefaultTableModel) TelaUsuario.TbUsuarios.getModel();
+            model.setNumRows(0);
+
+            while (rs.next()) {
+                int id = rs.getInt("id_usuario");
+                String nome = rs.getString("usuario");
+                String login = rs.getString("login");
+                String senha = rs.getString("senha");
+                String perfil = rs.getString("perfil");
+
+                model.addRow(new Object[]{id, nome, login, senha, perfil});
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Erro no método pesquisaAuto: " + e);
+        } finally {
+            try { if(conexao != null) conexao.close(); } catch (SQLException e) {}
+        }
+    }
+
+  
+    public void editar(UsuarioDTO objUsuarioDTO) {
+        String sql = "UPDATE tb_usuarios SET usuario = ?, login = ?, senha = ?, perfil = ? WHERE id_usuario = ?";
+        conexao = new ConexaoDAO().conector();
+
+        try {
+            pst = conexao.prepareStatement(sql);
+            pst.setString(1, objUsuarioDTO.getNome_usuario());
+            pst.setString(2, objUsuarioDTO.getLogin_usuario());
+            pst.setString(3, objUsuarioDTO.getSenha_usuario());
+            pst.setString(4, objUsuarioDTO.getPerfil_usuario());
+            pst.setInt(5, objUsuarioDTO.getId_usuario());
+
+            int edit = pst.executeUpdate();
+            if (edit > 0) {
+                JOptionPane.showMessageDialog(null, "Usuário editado com sucesso!");
+                pesquisaAuto();
+                limparCampos();
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Erro no método editar: " + e);
+        } finally {
+            try { if(conexao != null) conexao.close(); } catch (SQLException e) {}
+        }
+    }
+
+    
+    public void deletar(UsuarioDTO objUsuarioDTO) {
+        String sql = "DELETE FROM tb_usuarios WHERE id_usuario = ?";
+        conexao = new ConexaoDAO().conector();
+
+        try {
+            pst = conexao.prepareStatement(sql);
+            pst.setInt(1, objUsuarioDTO.getId_usuario());
+
+            int del = pst.executeUpdate();
+            if (del > 0) {
+                JOptionPane.showMessageDialog(null, "Usuário deletado com sucesso!");
+                pesquisaAuto();
+                limparCampos();
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Erro no método deletar: " + e);
+        } finally {
+            try { if(conexao != null) conexao.close(); } catch (SQLException e) {}
+        }
+    }
+
+
+    public void limparCampos() {
+        TelaUsuario.txtIdUsu.setText(null);
+        TelaUsuario.txtLoginUsu.setText(null);
+        TelaUsuario.txtNomeUsu.setText(null);
+        TelaUsuario.txtSenhaUsu.setText(null);
+        TelaUsuario.cboPerfilUsu.setSelectedIndex(0); 
+    }
+}
